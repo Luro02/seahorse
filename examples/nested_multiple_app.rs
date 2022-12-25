@@ -88,5 +88,5 @@ fn world_command() -> Command {
         .description("hello world command")
         .usage("nested_multiple_app hello(he, h) world(w)")
         .alias("w")
-        .action(|_| println!("Hello world"))
+        .action(|_: &_| println!("Hello world"))
 }

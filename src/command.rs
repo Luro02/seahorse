@@ -76,8 +76,8 @@ impl Command {
     /// let command = Command::new("cmd")
     ///     .action(action);
     /// ```
-    pub fn action(mut self, action: Action) -> Self {
-        self.action = Some(action);
+    pub fn action(mut self, action: impl Into<Action>) -> Self {
+        self.action = Some(action.into());
         self
     }
 
@@ -210,14 +210,14 @@ impl Command {
         match args.split_first() {
             Some((cmd, args_v)) => match self.select_command(cmd) {
                 Some(command) => command.run(args_v.to_vec()),
-                None => match self.action {
+                None => match &self.action {
                     Some(action) => {
                         if args.contains(&"-h".to_string()) || args.contains(&"--help".to_string())
                         {
                             self.help();
                             return;
                         }
-                        action(&Context::new(
+                        action.run(&Context::new(
                             args.to_vec(),
                             self.flags.clone(),
                             self.help_text(),
@@ -226,13 +226,13 @@ impl Command {
                     None => self.help(),
                 },
             },
-            None => match self.action {
+            None => match &self.action {
                 Some(action) => {
                     if args.contains(&"-h".to_string()) || args.contains(&"--help".to_string()) {
                         self.help();
                         return;
                     }
-                    action(&Context::new(
+                    action.run(&Context::new(
                         args.to_vec(),
                         self.flags.clone(),
                         self.help_text(),
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn command_test() {
-        let a: Action = |c: &Context| println!("Hello, {:?}", c.args);
+        let a: Action = Action::from(|c: &Context| println!("Hello, {:?}", c.args));
         let c = Command::new("hello")
             .description("usre command")
             .usage("test hello user")
@@ -394,12 +394,12 @@ mod tests {
 
     #[test]
     fn sub_command_test() {
-        let a: Action = |c: &Context| println!("Hello, {:?}", c.args);
+        let a: Action = Action::from(|c: &Context| println!("Hello, {:?}", c.args));
         let sub = Command::new("world")
             .description("user command")
             .usage("test hello world user")
             .alias("w")
-            .action(a)
+            .action(a.clone())
             .flag(Flag::new("t", FlagType::Bool));
         let c = Command::new("hello")
             .description("user command")

@@ -158,8 +158,8 @@ impl App {
     /// let app = App::new("cli")
     ///     .action(action);
     /// ```
-    pub fn action(mut self, action: Action) -> Self {
-        self.action = Some(action);
+    pub fn action(mut self, action: impl Into<Action>) -> Self {
+        self.action = Some(action.into());
         self
     }
 
@@ -212,13 +212,13 @@ impl App {
 
         match self.select_command(cmd) {
             Some(command) => command.run(args_v.to_vec()),
-            None => match self.action {
+            None => match &self.action {
                 Some(action) => {
                     if args.contains(&"-h".to_string()) || args.contains(&"--help".to_string()) {
                         self.help();
                         return;
                     }
-                    action(&Context::new(
+                    action.run(&Context::new(
                         args[1..].to_vec(),
                         self.flags.clone(),
                         self.help_text(),
@@ -416,7 +416,7 @@ mod tests {
 
     #[test]
     fn multiple_app_test() {
-        let a: Action = |c: &Context| {
+        let a: Action = Action::from(|c: &Context| {
             assert_eq!(true, c.bool_flag("bool"));
             match c.string_flag("string") {
                 Ok(flag) => assert_eq!("string".to_string(), flag),
@@ -430,7 +430,7 @@ mod tests {
                 Ok(flag) => assert_eq!(1.23, flag),
                 _ => assert!(false, "float test false..."),
             }
-        };
+        });
         let c = Command::new("hello")
             .alias("h")
             .description("hello command")
@@ -483,7 +483,7 @@ mod tests {
 
     #[test]
     fn single_app_test() {
-        let action: Action = |c: &Context| {
+        let action: Action = Action::from(|c: &Context| {
             assert_eq!(true, c.bool_flag("bool"));
             match c.string_flag("string") {
                 Ok(flag) => assert_eq!("string".to_string(), flag),
@@ -497,7 +497,7 @@ mod tests {
                 Ok(flag) => assert_eq!(1.23, flag),
                 _ => assert!(false, "float test false..."),
             }
-        };
+        });
 
         let app = App::new("test")
             .author("Author <author@example.com>")
@@ -531,7 +531,7 @@ mod tests {
 
     #[test]
     fn flag_only_app_test() {
-        let action: Action = |c: &Context| {
+        let action: Action = Action::from(|c: &Context| {
             assert_eq!(true, c.bool_flag("bool"));
             match c.string_flag("string") {
                 Ok(flag) => assert_eq!("string".to_string(), flag),
@@ -545,7 +545,7 @@ mod tests {
                 Ok(flag) => assert_eq!(1.23, flag),
                 _ => assert!(false, "float test false..."),
             }
-        };
+        });
 
         let app = App::new("test")
             .author("Author <author@example.com>")
@@ -578,7 +578,7 @@ mod tests {
 
     #[test]
     fn single_app_equal_notation_test() {
-        let action: Action = |c: &Context| {
+        let action: Action = Action::from(|c: &Context| {
             assert_eq!(true, c.bool_flag("bool"));
             match c.string_flag("string") {
                 Ok(flag) => assert_eq!("str=ing".to_string(), flag),
@@ -592,7 +592,7 @@ mod tests {
                 Ok(flag) => assert_eq!(1.23, flag),
                 _ => assert!(false, "float test false..."),
             }
-        };
+        });
 
         let app = App::new("test")
             .author("Author <author@example.com>")
